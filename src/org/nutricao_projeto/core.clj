@@ -3,15 +3,11 @@
             [cheshire.core :as json]
             [clojure.string :as str]))
 
-(def api-key "wEs6WCnpgqM3QnNWYwQKBqzjch59uWB7Nye9VT0Q")
-
 (defn buscar-alimento [nome]
-  (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
-        response (client/get url {:query-params {"api_key" api-key
-                                                 "query" nome}
-                                  :headers {"Accept" "application/json"}
+  (let [url (str "http://localhost:3000/alimento/" nome)
+        response (client/get url {:headers {"Accept" "application/json"}
                                   :as :json})]
-    (get-in response [:body :foods])))
+    (:body response)))
 
 (defn obter-nutriente [nutrientes nome]
   (if (empty? nutrientes)
