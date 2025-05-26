@@ -9,32 +9,40 @@
                                   :as :json})]
     (:body response)))
 
+(defn enviar-refeicao [refeicao]
+  (client/post "http://localhost:3000/refeicoes"
+               {:headers {"Content-Type" "application/json"
+                          "Accept" "application/json"}
+                :body (json/generate-string refeicao)
+                :as :json}))
+
 (defn obter-nutriente [nutrientes nome]
   (if (empty? nutrientes)
-    nil
+    0
     (let [n (first nutrientes)]
       (if (= nome (:nutrientName n))
         (:value n)
         (recur (rest nutrientes) nome)))))
 
-(defn mostrar-alimentos-rec [alimentos count]
-  (if (or (empty? alimentos) (>= count 5))
-    nil
-    (let [alimento (first alimentos)
-          descricao (:description alimento)
-          categoria (:foodCategory alimento)
-          nutrientes (:foodNutrients alimento)
-          calorias (obter-nutriente nutrientes "Energy")
-          proteina (obter-nutriente nutrientes "Protein")
-          gordura (obter-nutriente nutrientes "Total lipid (fat)")]
-      (println "===========================")
-      (println "Nome: " descricao)
-      (println "Categoria: " categoria)
-      (println "Calorias: " (or calorias "N/A"))
-      (println "Proteína: " (or proteina "N/A"))
-      (println "Gordura: " (or gordura "N/A"))
-      (println "===========================")
-      (recur (rest alimentos) (inc count)))))
+(defn imprimir-refeicoes [refeicoes]
+  (println "---------------------------------------------------------")
+  (println (format "%-10s %8s %10s %10s %10s %14s"
+                   "Alimento" "Qtd(g)" "Calorias" "Proteína" "Gordura" "Carboidrato"))
+  (println "---------------------------------------------------------")
+  (letfn [(imprimir-rec [lst]
+            (if (empty? lst)
+              (println "---------------------------------------------------------")
+              (do
+                (let [r (first lst)]
+                  (println (format "%-10s %8.1f %10.2f %10.2f %10.2f %14.2f"
+                                   (:alimento r)
+                                   (:quantidade r)
+                                   (:calorias r)
+                                   (:proteina r)
+                                   (:gordura r)
+                                   (:carboidrato r))))
+                (recur (rest lst)))))]
+    (imprimir-rec refeicoes)))
 
 (defn inteiro? [s]
   (boolean (re-matches #"\d+" s)))
@@ -46,7 +54,8 @@
   (println "=== Menu Nutricional ===")
   (println "1. Consultar alimento")
   (println "2. Adicionar refeição")
-  (println "3. Sair")
+  (println "3. Mostrar refeições do dia")
+  (println "4. Sair")
   (println "Escolha uma opção:")
   (let [entrada (read-line)]
     (if (inteiro? entrada)
@@ -54,59 +63,39 @@
       -1)))
 
 (defn adicionar-refeicao [refeicoes]
-  (println "Digite os alimentos consumidos, separados por vírgula (ex: rice, eggs, meat, pasta):")
+  (println "Digite os alimentos consumidos separados por vírgula (ex: arroz, feijao, ovo):")
   (let [linha (read-line)
         nomes (str/split linha #",\s*")]
-    (letfn [(processar [restantes refeicoes-atualizadas]
-              (if (empty? restantes)
-                (let [total-cal (reduce + (map :calorias refeicoes-atualizadas))
-                      total-prot (reduce + (map :proteina refeicoes-atualizadas))
-                      total-gord (reduce + (map :gordura refeicoes-atualizadas))
-                      total-carb (reduce + (map :carboidrato refeicoes-atualizadas))]
-                  (println (format "Total consumido hoje: %.2f kcal | %.2f g proteínas | %.2f g gorduras | %.2f g carboidratos"
-                                   total-cal total-prot total-gord total-carb))
-                  refeicoes-atualizadas)
-                (let [nome (first restantes)
-                      resultados (buscar-alimento nome)]
-                  (if (and resultados (not (empty? resultados)))
-                    (let [alimento (first resultados)
-                          descricao (:description alimento)
-                          nutrientes (:foodNutrients alimento)
-                          cal-100g (obter-nutriente nutrientes "Energy")
-                          prot-100g (obter-nutriente nutrientes "Protein")
-                          gord-100g (obter-nutriente nutrientes "Total lipid (fat)")
-                          carb-100g (obter-nutriente nutrientes "Carbohydrate, by difference")]
-                      (if cal-100g
-                        (do
-                          (println (str "Digite a quantidade consumida em gramas de " descricao ":"))
-                          (let [qtd-str (read-line)]
-                            (if (double-str? qtd-str)
-                              (let [qtd (Double/parseDouble qtd-str)
-                                    cal (* cal-100g (/ qtd 100))
-                                    prot (* (or prot-100g 0) (/ qtd 100))
-                                    gord (* (or gord-100g 0) (/ qtd 100))
-                                    carb (* (or carb-100g 0) (/ qtd 100))
-                                    nova-ref {:alimento descricao
-                                              :quantidade qtd
-                                              :calorias cal
-                                              :proteina prot
-                                              :gordura gord
-                                              :carboidrato carb}]
-                                (println (format "Adicionado: %s - %.2f g | %.2f kcal | %.2f g proteína | %.2f g gordura | %.2f g carboidrato"
-                                                 descricao qtd cal prot gord carb))
-                                (recur (rest restantes) (conj refeicoes-atualizadas nova-ref)))
-                              (do
-                                (println "Quantidade inválida.")
-                                (recur (rest restantes) refeicoes-atualizadas)))))
-                        (do
-                          (println "Não foi possível obter as calorias.")
-                          (recur (rest restantes) refeicoes-atualizadas))))
-                    (do
-                      (println (str "Alimento não encontrado: " nome))
-                      (recur (rest restantes) refeicoes-atualizadas))))))]
-
+    (letfn [(processar [alimentos acumulado]
+              (if (empty? alimentos)
+                acumulado
+                (let [nome (first alimentos)
+                      resultado (buscar-alimento nome)
+                      alimento (first resultado)
+                      descricao (:description alimento)
+                      nutrientes (:foodNutrients alimento)
+                      cal-100g (obter-nutriente nutrientes "Energy")
+                      prot-100g (obter-nutriente nutrientes "Protein")
+                      gord-100g (obter-nutriente nutrientes "Total lipid (fat)")
+                      carb-100g (obter-nutriente nutrientes "Carbohydrate, by difference")]
+                  (println (str "Digite a quantidade consumida em gramas de " descricao ":"))
+                  (let [qtd-str (read-line)]
+                    (if (double-str? qtd-str)
+                      (let [qtd (Double/parseDouble qtd-str)
+                            fator (/ qtd 100.0)
+                            nova-refeicao {:alimento descricao
+                                           :quantidade qtd
+                                           :calorias (* cal-100g fator)
+                                           :proteina (* prot-100g fator)
+                                           :gordura  (* gord-100g fator)
+                                           :carboidrato (* carb-100g fator)}]
+                        (println (str "Adicionado: " descricao " (" qtd "g)"))
+                        (enviar-refeicao nova-refeicao)
+                        (recur (rest alimentos) (conj acumulado nova-refeicao)))
+                      (do
+                        (println "Quantidade inválida. Pulando alimento.")
+                        (recur (rest alimentos) acumulado)))))))]
       (processar nomes refeicoes))))
-
 
 (defn executar [refeicoes]
   (let [opcao (menu)]
@@ -116,16 +105,39 @@
         (println "Digite o nome do alimento:")
         (let [nome (read-line)
               resultados (buscar-alimento nome)]
-          (if (and resultados (not (empty? resultados)))
-            (mostrar-alimentos-rec resultados 0)
+          (if (not (empty? resultados))
+            (loop [lst resultados
+                   count 0]
+              (if (or (empty? lst) (>= count 5))
+                nil
+                (let [alimento (first lst)
+                      descricao (:description alimento)
+                      categoria (:foodCategory alimento)
+                      nutrientes (:foodNutrients alimento)
+                      calorias (obter-nutriente nutrientes "Energy")
+                      proteina (obter-nutriente nutrientes "Protein")
+                      gordura (obter-nutriente nutrientes "Total lipid (fat)")]
+                  (println "===========================")
+                  (println "Nome: " descricao)
+                  (println "Categoria: " categoria)
+                  (println "Calorias: " calorias)
+                  (println "Proteína: " proteina)
+                  (println "Gordura: " gordura)
+                  (println "===========================")
+                  (recur (rest lst) (inc count)))))
             (println "Nenhum alimento encontrado.")))
         (recur refeicoes))
 
       (= opcao 2)
-      (let [novas-refeicoes (adicionar-refeicao refeicoes)]
-        (recur novas-refeicoes))
+      (let [novas (adicionar-refeicao refeicoes)]
+        (recur novas))
 
       (= opcao 3)
+      (do
+        (imprimir-refeicoes refeicoes)
+        (recur refeicoes))
+
+      (= opcao 4)
       (println "Saindo...")
 
       :else
