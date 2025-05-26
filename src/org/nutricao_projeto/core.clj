@@ -97,6 +97,25 @@
                         (recur (rest alimentos) acumulado)))))))]
       (processar nomes refeicoes))))
 
+(defn mostrar-alimentos-rec [alimentos count]
+  (if (or (empty? alimentos) (>= count 5))
+    nil
+    (let [alimento (first alimentos)
+          descricao (:description alimento)
+          categoria (:foodCategory alimento)
+          nutrientes (:foodNutrients alimento)
+          calorias (obter-nutriente nutrientes "Energy")
+          proteina (obter-nutriente nutrientes "Protein")
+          gordura (obter-nutriente nutrientes "Total lipid (fat)")]
+      (println "===========================")
+      (println "Nome: " descricao)
+      (println "Categoria: " categoria)
+      (println "Calorias: " calorias)
+      (println "Proteína: " proteina)
+      (println "Gordura: " gordura)
+      (println "===========================")
+      (recur (rest alimentos) (inc count)))))
+
 (defn executar [refeicoes]
   (let [opcao (menu)]
     (cond
@@ -106,25 +125,7 @@
         (let [nome (read-line)
               resultados (buscar-alimento nome)]
           (if (not (empty? resultados))
-            (loop [lst resultados
-                   count 0]
-              (if (or (empty? lst) (>= count 5))
-                nil
-                (let [alimento (first lst)
-                      descricao (:description alimento)
-                      categoria (:foodCategory alimento)
-                      nutrientes (:foodNutrients alimento)
-                      calorias (obter-nutriente nutrientes "Energy")
-                      proteina (obter-nutriente nutrientes "Protein")
-                      gordura (obter-nutriente nutrientes "Total lipid (fat)")]
-                  (println "===========================")
-                  (println "Nome: " descricao)
-                  (println "Categoria: " categoria)
-                  (println "Calorias: " calorias)
-                  (println "Proteína: " proteina)
-                  (println "Gordura: " gordura)
-                  (println "===========================")
-                  (recur (rest lst) (inc count)))))
+            (mostrar-alimentos-rec resultados 0)
             (println "Nenhum alimento encontrado.")))
         (recur refeicoes))
 
