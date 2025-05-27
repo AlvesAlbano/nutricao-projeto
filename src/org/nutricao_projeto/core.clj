@@ -1,5 +1,6 @@
 (ns org.nutricao-projeto.core
-  (:require [org.nutricao-projeto.alimento.alimento-controller :as alimento])
+  (:require [org.nutricao-projeto.alimento.alimento-controller :as alimento]
+            [org.nutricao-projeto.exercicio.exercicio-controller :as exercicio])
   )
 
 (defn menu []
@@ -47,3 +48,4 @@
 (defn -main []
   (executar [])
   )
+
