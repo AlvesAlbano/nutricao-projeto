@@ -4,10 +4,12 @@
             [clojure.string :as str]))
 
 (defn buscar-alimento [nome]
-  (let [url (str "http://localhost:3000/alimento/" nome)
-        response (client/get url {:headers {"Accept" "application/json"}
-                                  :as      :json})]
-    (:body response)))
+      (let [nome-enc (java.net.URLEncoder/encode nome "UTF-8")
+            url (str "http://localhost:3000/alimento/" nome-enc)
+            response (client/get url {:headers {"Accept" "application/json"}
+                                      :as :json})]
+           (:body response)))
+
 
 (defn enviar-refeicao [refeicao]
   (client/post "http://localhost:3000/refeicoes"
@@ -50,40 +52,44 @@
 (defn double-str? [s]
   (boolean (re-matches #"^\d+(\.\d+)?$" s)))
 
-(defn adicionar-refeicao [refeicoes]
+(defn adicionar-refeicao [refeicoes traduzir-pt-en traduzir-en-pt]
   (println "Digite os alimentos consumidos separados por vírgula (ex: arroz, feijao, ovo):")
   (let [linha (read-line)
-        nomes (str/split linha #",\s*")]
-    (letfn [(processar [alimentos acumulado]
+        nomes-pt (clojure.string/split linha #",\s*")
+        nomes-en (map traduzir-pt-en nomes-pt)]
+    (letfn [(processar [alimentos nomes-pt acumulado]
               (if (empty? alimentos)
                 acumulado
-                (let [nome (first alimentos)
-                      resultado (buscar-alimento nome)
+                (let [nome-en (first alimentos)
+                      nome-pt (first nomes-pt)
+                      resultado (buscar-alimento nome-en)
                       alimento (first resultado)
-                      descricao (:description alimento)
+                      descricao-en (:description alimento)
+                      descricao-pt (traduzir-en-pt descricao-en)
                       nutrientes (:foodNutrients alimento)
                       cal-100g (obter-nutriente nutrientes "Energy")
                       prot-100g (obter-nutriente nutrientes "Protein")
                       gord-100g (obter-nutriente nutrientes "Total lipid (fat)")
                       carb-100g (obter-nutriente nutrientes "Carbohydrate, by difference")]
-                  (println (str "Digite a quantidade consumida em gramas de " descricao ":"))
+                  (println (str "Digite a quantidade consumida em gramas de " descricao-pt ":"))
                   (let [qtd-str (read-line)]
                     (if (double-str? qtd-str)
                       (let [qtd (Double/parseDouble qtd-str)
                             fator (/ qtd 100.0)
-                            nova-refeicao {:alimento descricao
+                            nova-refeicao {:alimento descricao-pt
                                            :quantidade qtd
                                            :calorias (* cal-100g fator)
                                            :proteina (* prot-100g fator)
                                            :gordura  (* gord-100g fator)
                                            :carboidrato (* carb-100g fator)}]
-                        (println (str "Adicionado: " descricao " (" qtd "g)"))
+                        (println (str "Adicionado: " descricao-pt " (" qtd "g)"))
                         (enviar-refeicao nova-refeicao)
-                        (recur (rest alimentos) (conj acumulado nova-refeicao)))
+                        (recur (rest alimentos) (rest nomes-pt) (conj acumulado nova-refeicao)))
                       (do
                         (println "Quantidade inválida. Pulando alimento.")
-                        (recur (rest alimentos) acumulado)))))))]
-      (processar nomes refeicoes))))
+                        (recur (rest alimentos) (rest nomes-pt) acumulado)))))))]
+      (processar nomes-en nomes-pt refeicoes))))
+
 
 (defn mostrar-alimentos-rec [alimentos count]
   (if (or (empty? alimentos) (>= count 5))
