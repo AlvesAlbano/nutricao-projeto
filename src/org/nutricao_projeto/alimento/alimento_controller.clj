@@ -1,12 +1,13 @@
 (ns org.nutricao-projeto.alimento.alimento-controller
   (:require [cheshire.core :as json]
             [clj-http.client :as client]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [org.nutricao-projeto.traducao.traduzir-frase :as trad]))
 
 (defn buscar-alimento [nome]
   (let [url (str "http://localhost:3000/alimento/" nome)
         response (client/get url {:headers {"Accept" "application/json"}
-                                  :as      :json})]
+                                  :as :json})]
     (:body response)))
 
 (defn enviar-refeicao [refeicao]
@@ -14,7 +15,7 @@
                {:headers {"Content-Type" "application/json"
                           "Accept" "application/json"}
                 :body (json/generate-string refeicao)
-                :as      :json}))
+                :as :json}))
 
 (defn obter-nutriente [nutrientes nome]
   (if (empty? nutrientes)
@@ -40,8 +41,8 @@
                                    (:calorias r)
                                    (:proteina r)
                                    (:gordura r)
-                                   (:carboidrato r))))
-                (recur (rest lst)))))]
+                                   (:carboidrato r)) ))
+                (recur (rest lst))))) ]
     (imprimir-rec refeicoes)))
 
 (defn inteiro? [s]
@@ -59,30 +60,50 @@
                 acumulado
                 (let [nome (first alimentos)
                       resultado (buscar-alimento nome)
-                      alimento (first resultado)
-                      descricao (:description alimento)
-                      nutrientes (:foodNutrients alimento)
-                      cal-100g (obter-nutriente nutrientes "Energy")
-                      prot-100g (obter-nutriente nutrientes "Protein")
-                      gord-100g (obter-nutriente nutrientes "Total lipid (fat)")
-                      carb-100g (obter-nutriente nutrientes "Carbohydrate, by difference")]
-                  (println (str "Digite a quantidade consumida em gramas de " descricao ":"))
-                  (let [qtd-str (read-line)]
-                    (if (double-str? qtd-str)
-                      (let [qtd (Double/parseDouble qtd-str)
-                            fator (/ qtd 100.0)
-                            nova-refeicao {:alimento descricao
-                                           :quantidade qtd
-                                           :calorias (* cal-100g fator)
-                                           :proteina (* prot-100g fator)
-                                           :gordura  (* gord-100g fator)
-                                           :carboidrato (* carb-100g fator)}]
-                        (println (str "Adicionado: " descricao " (" qtd "g)"))
-                        (enviar-refeicao nova-refeicao)
-                        (recur (rest alimentos) (conj acumulado nova-refeicao)))
-                      (do
-                        (println "Quantidade inválida. Pulando alimento.")
-                        (recur (rest alimentos) acumulado)))))))]
+                      alimentos-filtrados (take 5 resultado)
+                      traduzidos (mapv #(assoc % :descricao-pt
+                                                 (try
+                                                   (trad/ingles-portugues (:description %))
+                                                   (catch Exception _ (:description %))))
+                                       alimentos-filtrados)]
+                  (if (empty? traduzidos)
+                    (do
+                      (println "Nenhum alimento encontrado.")
+                      (recur (rest alimentos) acumulado))
+                    (do
+                      (println "\nSelecione o alimento correspondente:")
+                      (doseq [[i alimento] (map-indexed vector traduzidos)]
+                        (println (str (inc i) ". " (:descricao-pt alimento))))
+                      (let [opcao-str (read-line)
+                            opcao (try (Integer/parseInt opcao-str) (catch Exception _ 0))]
+                        (if (or (< opcao 1) (> opcao (count traduzidos)))
+                          (do
+                            (println "Opção inválida. Pulando alimento.")
+                            (recur (rest alimentos) acumulado))
+                          (let [alimento (nth traduzidos (dec opcao))
+                                descricao (:descricao-pt alimento)
+                                nutrientes (:foodNutrients alimento)
+                                cal-100g (obter-nutriente nutrientes "Energy")
+                                prot-100g (obter-nutriente nutrientes "Protein")
+                                gord-100g (obter-nutriente nutrientes "Total lipid (fat)")
+                                carb-100g (obter-nutriente nutrientes "Carbohydrate, by difference")]
+                            (println (str "Digite a quantidade consumida em gramas de " descricao ":"))
+                            (let [qtd-str (read-line)]
+                              (if (double-str? qtd-str)
+                                (let [qtd (Double/parseDouble qtd-str)
+                                      fator (/ qtd 100.0)
+                                      nova-refeicao {:alimento descricao
+                                                     :quantidade qtd
+                                                     :calorias (* cal-100g fator)
+                                                     :proteina (* prot-100g fator)
+                                                     :gordura  (* gord-100g fator)
+                                                     :carboidrato (* carb-100g fator)}]
+                                  (println (str "Adicionado: " descricao " (" qtd "g)"))
+                                  (enviar-refeicao nova-refeicao)
+                                  (recur (rest alimentos) (conj acumulado nova-refeicao)))
+                                (do
+                                  (println "Quantidade inválida. Pulando alimento.")
+                                  (recur (rest alimentos) acumulado)))))))))))) ]
       (processar nomes refeicoes))))
 
 (defn mostrar-alimentos-rec [alimentos count]
