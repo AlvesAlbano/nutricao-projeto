@@ -48,5 +48,4 @@
         (recur refeicoes)))))
 
 (defn -main []
-
   (executar []))

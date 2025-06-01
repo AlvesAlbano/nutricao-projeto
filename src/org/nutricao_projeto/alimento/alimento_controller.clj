@@ -27,22 +27,21 @@
 
 (defn imprimir-refeicoes [refeicoes]
   (println "---------------------------------------------------------")
-  (println (format "%-10s %8s %10s %10s %10s %14s"
+  (println (format "%-25s %8s %10s %10s %10s %14s"
                    "Alimento" "Qtd(g)" "Calorias" "Proteína" "Gordura" "Carboidrato"))
   (println "---------------------------------------------------------")
   (letfn [(imprimir-rec [lst]
             (if (empty? lst)
               (println "---------------------------------------------------------")
-              (do
-                (let [r (first lst)]
-                  (println (format "%-10s %8.1f %10.2f %10.2f %10.2f %14.2f"
-                                   (:alimento r)
-                                   (:quantidade r)
-                                   (:calorias r)
-                                   (:proteina r)
-                                   (:gordura r)
-                                   (:carboidrato r)) ))
-                (recur (rest lst))))) ]
+              (let [r (first lst)]
+                (println (format "%-25s %8.1f %10.2f %10.2f %10.2f %14.2f"
+                                 (:alimento r)
+                                 (:quantidade r)
+                                 (:calorias r)
+                                 (:proteina r)
+                                 (:gordura r)
+                                 (:carboidrato r)))
+                (recur (rest lst)))))]
     (imprimir-rec refeicoes)))
 
 (defn inteiro? [s]
@@ -50,6 +49,18 @@
 
 (defn double-str? [s]
   (boolean (re-matches #"^\d+(\.\d+)?$" s)))
+
+(defn imprimir-alimentos-indexados [alimentos idx]
+  (if (empty? alimentos)
+    nil
+    (let [a (first alimentos)
+          i idx
+          linha (str (inc i) ". "
+                     (try
+                       (trad/ingles-portugues (:descricao-detalhada a))
+                       (catch Exception _ (:descricao-detalhada a))))]
+      (println linha)
+      (recur (rest alimentos) (inc i)))))
 
 (defn adicionar-refeicao [refeicoes]
   (println "Digite os alimentos consumidos separados por vírgula (ex: arroz, feijao, ovo):")
@@ -63,17 +74,16 @@
                       alimentos-filtrados (take 5 resultado)
                       traduzidos (mapv #(assoc % :descricao-pt
                                                  (try
-                                                   (trad/ingles-portugues (:description %))
-                                                   (catch Exception _ (:description %))))
+                                                   (trad/ingles-portugues (:descricao-detalhada %))
+                                                   (catch Exception _ (:descricao-detalhada %))))
                                        alimentos-filtrados)]
                   (if (empty? traduzidos)
                     (do
-                      (println "Nenhum alimento encontrado.")
+                      (println (str "Nenhum alimento encontrado para: " nome))
                       (recur (rest alimentos) acumulado))
                     (do
                       (println "\nSelecione o alimento correspondente:")
-                      (doseq [[i alimento] (map-indexed vector traduzidos)]
-                        (println (str (inc i) ". " (:descricao-pt alimento))))
+                      (imprimir-alimentos-indexados traduzidos 0)
                       (let [opcao-str (read-line)
                             opcao (try (Integer/parseInt opcao-str) (catch Exception _ 0))]
                         (if (or (< opcao 1) (> opcao (count traduzidos)))
@@ -103,14 +113,16 @@
                                   (recur (rest alimentos) (conj acumulado nova-refeicao)))
                                 (do
                                   (println "Quantidade inválida. Pulando alimento.")
-                                  (recur (rest alimentos) acumulado)))))))))))) ]
+                                  (recur (rest alimentos) acumulado))))))))))))]
       (processar nomes refeicoes))))
 
 (defn mostrar-alimentos-rec [alimentos count]
   (if (or (empty? alimentos) (>= count 5))
     nil
     (let [alimento (first alimentos)
-          descricao (:description alimento)
+          descricao (try
+                      (trad/ingles-portugues (:descricao-detalhada alimento))
+                      (catch Exception _ (:descricao-detalhada alimento)))
           categoria (:foodCategory alimento)
           nutrientes (:foodNutrients alimento)
           calorias (obter-nutriente nutrientes "Energy")
