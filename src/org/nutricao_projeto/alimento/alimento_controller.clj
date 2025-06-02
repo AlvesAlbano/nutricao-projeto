@@ -77,7 +77,7 @@
   (println "Digite os alimentos consumidos separados por vírgula (ex: arroz, feijao, ovo):")
   (let [linha (read-line)
         nomes-pt (clojure.string/split linha #",\s*")
-        nomes-en (map traduzir-pt-en nomes-pt)]
+        nomes-en (map trad/portugues-ingles nomes-pt)]
     (letfn [(processar [alimentos nomes-pt acumulado]
               (if (empty? alimentos)
                 acumulado

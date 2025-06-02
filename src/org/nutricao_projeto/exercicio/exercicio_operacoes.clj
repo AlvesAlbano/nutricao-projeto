@@ -58,11 +58,7 @@
    )
 
 (defn selecionar-exercicio [lista-exercicios indice]
-
-  (let [exercicio-selecionado (get lista-exercicios indice)]
-
-    exercicio-selecionado
-    )
+  (get lista-exercicios indice)
   )
 
 (defn registrar-perda [exercicio]
