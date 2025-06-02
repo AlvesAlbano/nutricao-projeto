@@ -1,10 +1,12 @@
 (ns org.nutricao-projeto.alimento.alimento-controller
   (:require [cheshire.core :as json]
             [clj-http.client :as client]
-            [clojure.string :as str]
-            [org.nutricao-projeto.traducao.traduzir-frase :as trad])
-  (:import [java.time LocalDateTime]
-           [java.time.format DateTimeFormatter]))
+            [clojure.string]
+            [org.nutricao-projeto.traducao.traduzir-frase :as trad]
+            )
+  (:import (java.time LocalDateTime)
+           (java.time.format DateTimeFormatter))
+  )
 
 (defn agora-formatado []
   (let [agora (LocalDateTime/now)
