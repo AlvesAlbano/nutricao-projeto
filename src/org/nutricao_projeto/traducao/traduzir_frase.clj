@@ -1,5 +1,5 @@
-(ns org.nutricao-projeto.traducao.traduzir-frase
-  (:require [cheshire.core :as json]
+(ns org.nutricao_projeto.traducao.traduzir_frase
+ (:require [cheshire.core :as json]
             [clj-http.client :as http]))
 
 (def api-url "https://ftapi.pythonanywhere.com/")

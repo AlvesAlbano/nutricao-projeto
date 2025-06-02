@@ -1,8 +1,7 @@
-(ns org.nutricao-projeto.exercicio.exercicio-operacoes
+(ns org.nutricao_projeto.exercicio.exercicio_operacoes
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
-            [org.nutricao-projeto.traducao.traduzir-frase :as traduzir])
-  )
+            [org.nutricao_projeto.traducao.traduzir_frase :as traduzir]))
 
 (def URL "http://localhost:3000/")
 

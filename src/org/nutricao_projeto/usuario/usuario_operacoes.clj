@@ -1,7 +1,7 @@
-(ns org.nutricao-projeto.usuario.usuario-operacoes
+(ns org.nutricao_projeto.usuario.usuario_operacoes
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
-            [org.nutricao-projeto.data :as data]))
+            [org.nutricao_projeto.data :as data]))
 
 (defn cadastrar-usuario [usuario]
   (http/post "http://localhost:3000/cadastrar-usuario"
