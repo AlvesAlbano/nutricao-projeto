@@ -24,8 +24,13 @@
     )
   )
 
-(defn indexar-lista-perda [lista-perda]
-
+(defn soma-calorias-perdidas []
+  (let [resposta (http/get (str URL "calorias-perdidas") {
+                                                  :headers {"Accept" "application/json"}
+                                                                  :as :json})
+        corpo (:body resposta)]
+    (reduce + (map :total-calorias corpo))
+    )
   )
 
 (defn adicionar-data [exercicio data]
@@ -58,11 +63,7 @@
    )
 
 (defn selecionar-exercicio [lista-exercicios indice]
-
-  (let [exercicio-selecionado (get lista-exercicios indice)]
-
-    exercicio-selecionado
-    )
+  (get lista-exercicios indice)
   )
 
 (defn registrar-perda [exercicio]

@@ -90,9 +90,12 @@
 
       (= opcao 10)
       (do
-        (println "Perdas caloricas registradas")
-        (println (exercicio/calorias-perdidas))
-        ;(exercicio/calorias-perdidas)
+        (let [_ (println "Perdas caloricas registradas: ")
+              _ (println (exercicio/calorias-perdidas))
+              _ (println "Total de calorias perdidas: ")
+              soma-calorias-perdidas (exercicio/soma-calorias-perdidas)
+              _ (println soma-calorias-perdidas)]
+        )
         (recur refeicoes)
         )
 
