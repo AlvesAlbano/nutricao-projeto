@@ -1,8 +1,9 @@
 (ns org.nutricao-projeto.core
   (:require [org.nutricao-projeto.alimento.alimento-controller :as alimento]
-            [org.nutricao-projeto.exercicio.exercicio-controller :as exercicio]
-            [org.nutricao-projeto.traducao.traduzir-frase :as trad]))
-
+            [org.nutricao-projeto.exercicio.exercicio-controller :as exercicio])
+  (:import [java.io InputStreamReader BufferedReader OutputStreamWriter PrintStream]
+           [java.nio.charset Charset]
+           [java.lang System]))
 
 (defn menu []
   (println "=== Menu Nutricional ===")
