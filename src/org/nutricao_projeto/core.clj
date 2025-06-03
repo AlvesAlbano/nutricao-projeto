@@ -84,8 +84,12 @@
 
       (= opcao 10)
       (do
-        (println "Perdas caloricas registradas")
-        (println (exercicio/calorias-perdidas))
+        (let [_ (println "Perdas caloricas registradas: ")
+              lista-calorias-perdidas (exercicio/calorias-perdidas)
+              _ (println "" lista-calorias-perdidas)
+              calorias-perdidas (exercicio/soma-calorias-perdidas)
+              _ (println "Total de calorias perdidas:" calorias-perdidas)]
+          )
         (recur refeicoes))
 
       :else
@@ -94,4 +98,6 @@
         (recur refeicoes)))))
 
 (defn -main []
-  (executar []))
+  (menu-usuario)
+  (executar [])
+  )

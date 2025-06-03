@@ -1,16 +1,8 @@
 (ns org.nutricao_projeto.exercicio.exercicio_operacoes
   (:require [cheshire.core :as json]
-            [clj-http.client :as http]
-            [org.nutricao_projeto.traducao.traduzir_frase :as traduzir]))
+            [clj-http.client :as http]))
 
 (def URL "http://localhost:3000/")
-
-(defn formatar-corpo [corpo]
-  {:nome (traduzir/ingles-portugues (:name corpo))
-   :calorias-por-hora (:calories_per_hour corpo)
-   :duracao-minutos (:duration_minutes corpo)
-   :total-calorias (:total_calories corpo)}
-  )
 
 (defn formatar-perda-lista [lista-perda]
   (let [nome (:nome lista-perda)
@@ -19,28 +11,32 @@
         total-calorias (:total-calorias lista-perda)
         data (:data lista-perda)]
 
-    (format "%s | Cal/H %d | Total Calorias %d | Duração %d | Data %s \n" nome calorias-por-hora total-calorias duracao-minutos data)
+    (format "%s | Cal/H %d | Total Calorias %d | Duração %d min | Data %s \n" nome calorias-por-hora total-calorias duracao-minutos data)
     )
-  )
-
-(defn indexar-lista-perda [lista-perda]
-
   )
 
 (defn adicionar-data [exercicio data]
   (assoc exercicio :data data)
   )
 
+(defn soma-calorias-perdidas []
+  (let [resposta (http/get (str URL "calorias-perdidas") {
+                                                          :headers {"Accept" "application/json"}
+                                                          :as :json})
+        corpo (:body resposta)]
+    (reduce + (map :total-calorias corpo))
+    )
+  )
+
 (defn listar-exercicios[nome-exercicio peso duracao]
-  (let [nome-traduzido (traduzir/portugues-ingles nome-exercicio)
-        resposta (http/get (str URL "exercicio") {
+  (let [resposta (http/get (str URL "exercicio") {
                                 :headers {"Accept" "application/json"}
-                                          :query-params {:activity nome-traduzido
+                                          :query-params {:activity nome-exercicio
                                                          :weight peso
                                                          :duration duracao}
                                 :as :json})
         corpo (:body resposta)]
-    (mapv formatar-corpo corpo)
+    corpo
     )
   )
 
@@ -68,12 +64,11 @@
               :as      :json})
   )
 
-
 (defn calorias-perdidas []
   (let [resposta (http/get "http://localhost:3000/calorias-perdidas" {:headers {"Accept" "application/json"}
                                                   :as :json})
     corpo (:body resposta)]
 
-    (mapv formatar-perda-lista corpo)
+    (map formatar-perda-lista corpo)
     )
   )
