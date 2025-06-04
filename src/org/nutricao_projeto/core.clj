@@ -2,28 +2,36 @@
   (:require [org.nutricao_projeto.alimento.alimento_controller :as alimento]
             [org.nutricao_projeto.usuario.usuario_operacoes :as usuario]
             [org.nutricao_projeto.traducao.traduzir_frase :as trad]
+            [org.nutricao-projeto.saldo-calorico :as saldo]
             [org.nutricao_projeto.exercicio.exercicio_operacoes :as exercicio]))
 
 (defn menu-usuario []
-  (println "Digite sua altura: ")
-  (let [altura (read)
-        _ (println "Digite seu peso: ")
-        peso (read)
-        _ (println "Digite sua idade: ")
-        idade (read)
-        _ (println "Digite seu sexo: ")
-        sexo (read)
-        usuario-dados {:altura altura :peso peso :idade idade :sexo sexo}]
-    (usuario/cadastrar-usuario usuario-dados)
-    (println "Usuário cadastrado!" usuario-dados)))
+
+  (if (empty? (usuario/get-usuario))
+    (println "Insira seus dados")
+    (let [_ (println "Digite sua altura: ")
+          altura (read)
+          _ (println "Digite seu peso: (Em Kg)")
+          peso (read)
+          _ (println "Digite sua idade: ")
+          idade (read)
+          _ (println "Digite seu sexo: ")
+          sexo (read)
+          usuario-dados {:altura altura :peso peso :idade idade :sexo sexo}]
+      (usuario/cadastrar-usuario usuario-dados)
+      (println "Usuário cadastrado!" usuario-dados))
+    (println "Usuário já cadastrado! " (usuario/get-usuario))
+    )
+  )
 
 (defn menu []
   (println "=== Menu Nutricional ===")
   (println "1. Adicionar refeição")
   (println "2. Mostrar refeições do dia")
-  (println "3. Sair")
-  (println "9. Adicionar exercício")
-  (println "10. Mostrar calorias perdidas")
+  (println "3. Adicionar exercício")
+  (println "4. Mostrar exercicios realizados")
+  (println "5. Calcular saldo calorico")
+  (println "6. Sair")
   (println "Escolha uma opção:")
   (let [entrada (read-line)]
     (if (alimento/inteiro? entrada)
@@ -111,11 +119,6 @@
         (recur refeicoes))
 
       (= opcao 3)
-      (println "Saindo...")
-
-      ;; === OPÇÕES ADICIONADAS PARA EXERCÍCIO ===
-
-      (= opcao 9)
       (do
         (println "Diga o nome do exercício: ")
         (let [nome-exercicio (read-line)
@@ -137,7 +140,7 @@
               _ (println (format "Exercício (%s) adicionado com sucesso!" exercicio-com-data))]
           (recur refeicoes)))
 
-      (= opcao 10)
+      (= opcao 4)
       (do
         (println "Perdas calóricas registradas: ")
         (let [lista-calorias-perdidas (exercicio/calorias-perdidas)
@@ -145,6 +148,21 @@
           (println "" lista-calorias-perdidas)
           (println "Total de calorias perdidas:" calorias-perdidas))
         (recur refeicoes))
+
+      (= opcao 5)
+      (do
+        (let [calorias-ganhas (imprimir-refeicoes)
+              calorias-perdidas (exercicio/soma-calorias-perdidas)
+              saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
+
+          (println "Total de calorias ganhas: " calorias-ganhas)
+          (println "Total de calorias perdidas: " calorias-perdidas)
+          (println saldo-calorico)
+              )
+        (recur refeicoes))
+
+      (= opcao 6)
+      (println "Saindo...")
 
       :else
       (do
