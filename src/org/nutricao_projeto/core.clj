@@ -1,10 +1,10 @@
-(ns org.nutricao-projeto.core
-  (:require [org.nutricao-projeto.alimento.alimento-controller :as alimento]
-            [org.nutricao-projeto.exercicio.exercicio-operacoes :as exercicio]
-            [org.nutricao-projeto.usuario.usuario-operacoes :as usuario])
-  )
+(ns org.nutricao_projeto.core
+  (:require [org.nutricao_projeto.alimento.alimento_controller :as alimento]
+            [org.nutricao_projeto.exercicio.exercicio_operacoes :as exercicio]
+            [org.nutricao_projeto.traducao.traduzir_frase :as trad]
+            [org.nutricao_projeto.usuario.usuario_operacoes :as usuario]))
 
-(defn menu-usuario[]
+(defn menu-usuario []
   (let [_ (println "Digite sua altura: ")
         altura (read)
         _ (println "Digite seu peso: ")
@@ -18,8 +18,7 @@
                  :idade idade
                  :sexo sexo}]
     (usuario/cadastrar-usuario usuario)
-    (println "usuario cadastrado!" usuario)
-  ))
+    (println "usuario cadastrado!" usuario)))
 
 (defn menu []
   (println "=== Menu Nutricional ===")
@@ -33,9 +32,7 @@
   (let [entrada (read-line)]
     (if (alimento/inteiro? entrada)
       (Integer/parseInt entrada)
-      -1)
-    )
-  )
+      -1)))
 
 (defn executar [refeicoes]
   (let [opcao (menu)]
@@ -43,10 +40,11 @@
       (= opcao 1)
       (do
         (println "Digite o nome do alimento:")
-        (let [nome (read-line)
-              resultados (alimento/buscar-alimento nome)]
+        (let [nome-p (read-line)
+              nome-e (trad/portugues-ingles nome-p)
+              resultados (alimento/buscar-alimento nome-e)]
           (if (not (empty? resultados))
-            (alimento/mostrar-alimentos-rec resultados 0)
+            (alimento/mostrar-alimentos-rec (take 7 resultados) 0) ; <= limite aqui
             (println "Nenhum alimento encontrado.")))
         (recur refeicoes))
 
@@ -65,40 +63,34 @@
       (= opcao 9)
       (do
         (println "Diga o nome do exercicio: ")
-
         (let [nome-exercicio (read-line)
               peso-usuario (usuario/get-peso)
               _ (println "Digite a duração do exercicio em minutos: ")
               duracao (read)
               _ (println (format "perda calorica baseada no seu peso atual %.2f Kg e tempo gasto %d min" peso-usuario duracao))
               lista-exercicios (exercicio/listar-exercicios nome-exercicio peso-usuario duracao)
-              ;_ (println lista-exercicios)
               _ (println (exercicio/enumerar-exercicios lista-exercicios))
               _ (println "Escolha o exercicio realizado: ")
               indice (read)
               exercicio-selecionado (exercicio/selecionar-exercicio lista-exercicios indice)
-              _ (println "Exercicio escolhido: "exercicio-selecionado)
+              _ (println "Exercicio escolhido: " exercicio-selecionado)
               _ (read-line)
               _ (println "Informe a data em qual o exercicio foi relizado: (Ex: dia/mês/ano)")
               data (read-line)
               exercicio-com-data (exercicio/adicionar-data exercicio-selecionado data)
               _ (exercicio/registrar-perda exercicio-com-data)
-              _ (println (format "Exercicio (%s) adicionado com sucesso!" exercicio-com-data))]
-          )
-        (recur refeicoes)
-        )
+              _ (println (format "Exercicio (%s) adicionado com sucesso!" exercicio-com-data))])
+        (recur refeicoes))
 
       (= opcao 10)
       (do
         (let [_ (println "Perdas caloricas registradas: ")
-              _ (println (exercicio/calorias-perdidas))
-              _ (println "Total de calorias perdidas: ")
-              soma-calorias-perdidas (exercicio/soma-calorias-perdidas)
-              _ (println soma-calorias-perdidas)]
-        )
-        (recur refeicoes)
-        )
-
+              lista-calorias-perdidas (exercicio/calorias-perdidas)
+              _ (println "" lista-calorias-perdidas)
+              calorias-perdidas (exercicio/soma-calorias-perdidas)
+              _ (println "Total de calorias perdidas:" calorias-perdidas)]
+          )
+        (recur refeicoes))
 
       :else
       (do
@@ -106,6 +98,6 @@
         (recur refeicoes)))))
 
 (defn -main []
-  ;(menu-usuario)
+  (menu-usuario)
   (executar [])
   )
