@@ -11,24 +11,11 @@
         formatador (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss")]
     (.format agora formatador)))
 
-(defn inteiro? [s]
-  (try
-    (Integer/parseInt s)
-    true
-    (catch Exception _ false)))
-
 (defn buscar-alimento [nome]
   (let [url (str "http://localhost:3000/alimento/" nome)
         response (client/get url {:headers {"Accept" "application/json"}
                                   :as :json})]
     (:body response)))
-
-(defn enviar-refeicao [refeicao]
-  (client/post "http://localhost:3000/refeicoes"
-               {:headers {"Content-Type" "application/json"
-                          "Accept" "application/json"}
-                :body (json/generate-string refeicao)
-                :as :json}))
 
 (defn obter-nutriente [nutrientes nome]
   (if (empty? nutrientes)
@@ -41,10 +28,15 @@
 (defn double-str? [s]
   (boolean (re-matches #"^\d+(\.\d+)?$" s)))
 
+(defn inteiro? [s]
+  (try
+    (Integer/parseInt s)
+    true
+    (catch Exception _ false)))
+
 (defn traduzir-e-filtrar-alimentos [nome-portugues]
   (let [nome-ingles (trad/portugues-ingles nome-portugues)
-        resultados (buscar-alimento nome-ingles)
-        alimentos-filtrados (take 5 resultados)]
+        resultados (take 5 (buscar-alimento nome-ingles))]
     (mapv
       (fn [a]
         (let [desc-eng (:description a)
@@ -54,7 +46,7 @@
                           "Sem descrição")
                         (catch Exception _ (or desc-eng "Sem descrição")))]
           (assoc a :descricao-pt desc-pt)))
-      alimentos-filtrados)))
+      resultados)))
 
 (defn montar-refeicao [selecionado qtd]
   (let [descricao (:descricao-pt selecionado)
@@ -68,6 +60,30 @@
      :quantidade qtd
      :calorias (* cal-100g fator)
      :proteina (* prot-100g fator)
-     :gordura  (* gord-100g fator)
+     :gordura (* gord-100g fator)
      :carboidrato (* carb-100g fator)
      :data-hora (agora-formatado)}))
+
+(defn imprimir-refeicoes [refeicoes]
+  (letfn [(linha-cabecalho []
+            (format "%-25s %8s %10s %10s %10s %14s %20s"
+                    "Alimento" "Qtd(g)" "Calorias" "Proteína" "Gordura" "Carboidrato" "Data/Hora"))
+          (formatar-refeicao [r]
+            (format "%-25s %8.1f %10.2f %10.2f %10.2f %14.2f %20s"
+                    (:alimento r)
+                    (:quantidade r)
+                    (:calorias r)
+                    (:proteina r)
+                    (:gordura r)
+                    (:carboidrato r)
+                    (:data-hora r)))
+          (acumular-calorias [lst acc]
+            (if (empty? lst)
+              acc
+              (recur (rest lst) (+ acc (:calorias (first lst))))))]
+    {:linhas (cons (linha-cabecalho) (map formatar-refeicao refeicoes))
+     :total-calorias (acumular-calorias refeicoes 0.0)}))
+
+(defn somar-calorias [refeicoes]
+  (reduce + 0 (map :calorias refeicoes)))
+

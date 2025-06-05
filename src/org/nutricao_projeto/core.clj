@@ -2,27 +2,26 @@
   (:require [org.nutricao_projeto.alimento.alimento_controller :as alimento]
             [org.nutricao_projeto.usuario.usuario_operacoes :as usuario]
             [org.nutricao_projeto.traducao.traduzir_frase :as trad]
-            [org.nutricao-projeto.saldo-calorico :as saldo]
-            [org.nutricao_projeto.exercicio.exercicio_operacoes :as exercicio]))
+            [org.nutricao_projeto.saldo_calorico :as saldo]
+            [org.nutricao_projeto.exercicio.exercicio_operacoes :as exercicio]
+            [clojure.string :as str]))
 
 (defn menu-usuario []
-
   (if (empty? (usuario/get-usuario))
-    (println "Insira seus dados")
-    (let [_ (println "Digite sua altura: ")
-          altura (read)
-          _ (println "Digite seu peso: (Em Kg)")
-          peso (read)
-          _ (println "Digite sua idade: ")
-          idade (read)
-          _ (println "Digite seu sexo: ")
-          sexo (read)
-          usuario-dados {:altura altura :peso peso :idade idade :sexo sexo}]
-      (usuario/cadastrar-usuario usuario-dados)
-      (println "Usuário cadastrado!" usuario-dados))
-    (println "Usuário já cadastrado! " (usuario/get-usuario))
-    )
-  )
+    (do
+      (println "Insira seus dados")
+      (println "Digite sua altura: ")
+      (let [altura (read)]
+        (println "Digite seu peso: (Em Kg)")
+        (let [peso (read)]
+          (println "Digite sua idade: ")
+          (let [idade (read)]
+            (println "Digite seu sexo: ")
+            (let [sexo (read)
+                  usuario-dados {:altura altura :peso peso :idade idade :sexo sexo}]
+              (usuario/cadastrar-usuario usuario-dados)
+              (println "Usuário cadastrado!" usuario-dados))))))
+    (println "Usuário já cadastrado! " (usuario/get-usuario))))
 
 (defn menu []
   (println "=== Menu Nutricional ===")
@@ -38,31 +37,15 @@
       (Integer/parseInt entrada)
       -1)))
 
-(defn imprimir-refeicoes [refeicoes]
-  (println "----------------------------------------------------------------------------------------------------------")
-  (println (format "%-25s %8s %10s %10s %10s %14s %20s"
-                   "Alimento" "Qtd(g)" "Calorias" "Proteína" "Gordura" "Carboidrato" "Data/Hora"))
-  (println "----------------------------------------------------------------------------------------------------------")
-  (letfn [(imprimir-rec [lst acc]
-            (if (empty? lst)
-              (do
-                (println "----------------------------------------------------------------------------------------------------------")
-                (println (format "Total de calorias consumidas no dia: %.2f kcal" acc)))
-              (let [r (first lst)
-                    cal (:calorias r)]
-                (println (format "%-25s %8.1f %10.2f %10.2f %10.2f %14.2f %20s"
-                                 (:alimento r)
-                                 (:quantidade r)
-                                 (:calorias r)
-                                 (:proteina r)
-                                 (:gordura r)
-                                 (:carboidrato r)
-                                 (:data-hora r)))
-                (recur (rest lst) (+ acc cal)))))]
-    (imprimir-rec refeicoes 0.0)))
-
-(defn adicionar-refeicoes [nomes refeicoes]
-  (letfn [(loop-nomes [restantes refeicoes-atualizadas]
+(defn executar [refeicoes]
+  (let [opcao (menu)]
+    (cond
+      (= opcao 1)
+      (do
+        (println "Digite os alimentos consumidos separados por vírgula (ex: arroz, feijao, ovo):")
+        (let [linha (read-line)
+              nomes (clojure.string/split linha #",\s*")]
+          (letfn [(processar [restantes refeicoes-atualizadas]
             (if (empty? restantes)
               refeicoes-atualizadas
               (let [nome (first restantes)
@@ -72,102 +55,111 @@
                           (if (empty? lst)
                             nil
                             (let [a (first lst)
-                                  nome (:descricao-pt a)
-                                  marca (or (:brandName a) "-")
-                                  porcao (or (:servingSize a) "??")
-                                  unidade (or (:servingSizeUnit a) "g")
-                                  categoria (try (trad/ingles-portugues (or (:foodCategory a) "-")) (catch Exception _ "-"))]
-                              (println (format "%d. %s (Marca: %s)\n   Porção: %s %s | Categoria: %s"
-                                               idx nome marca porcao unidade categoria))
+                                  desc-en (:description a)
+                                  desc-pt (try
+                                            (trad/ingles-portugues desc-en)
+                                            (catch Exception _ desc-en))
+                                  marca (or (:brandOwner a) "-")
+                                  categoria-en (:foodCategory a)
+                                  categoria-pt (try
+                                                 (if (and categoria-en (not (clojure.string/blank? categoria-en)))
+                                                   (trad/ingles-portugues categoria-en)
+                                                   "Categoria não informada")
+                                                 (catch Exception _
+                                                   "Categoria não informada"))
+                                  porcao (or (:servingSize a) "Porção não informada")
+                                  calorias (or (get-in a [:foodNutrients 0 :value]) "Calorias não informadas")]
+                              (println (format "%d. %s | Marca: %s | Categoria: %s | Porção: %s | Calorias: %s kcal"
+                                               idx desc-pt marca categoria-pt porcao calorias))
                               (recur (rest lst) (inc idx)))))]
+                  (mostrar-opcoes opcoes 1))
+                (println "Digite a opção desejada:")
+                (let [idx-str (read-line)
+                      idx (try (Integer/parseInt idx-str) (catch Exception _ 0))]
+                  (if (or (< idx 1) (> idx (count opcoes)))
+                    (do
+                      (println "Opção inválida, pulando alimento.")
+                      (recur (rest restantes) refeicoes-atualizadas))
+                    (let [selecionado (nth opcoes (dec idx))]
+                      (println (str "Digite a quantidade consumida em gramas de " (:descricao-pt selecionado) ":"))
+                      (let [qtd-str (read-line)]
+                        (if (alimento/double-str? qtd-str)
+                          (let [qtd (Double/parseDouble qtd-str)
+                                nova-refeicao (alimento/montar-refeicao selecionado qtd)
+                                refeicoes-novas (conj refeicoes-atualizadas nova-refeicao)]
+                            (println (str "Adicionado: " (:descricao-pt selecionado) " (" qtd "g)"))
+                            (recur (rest restantes) refeicoes-novas))
+                          (do
+                            (println "Quantidade inválida. Pulando alimento.")
+                            (recur (rest restantes) refeicoes-atualizadas))))))))))]
 
-                  (mostrar-opcoes opcoes 1)
-                  (let [idx-str (read-line)
-                        idx (try (Integer/parseInt idx-str) (catch Exception _ 0))]
-                    (if (or (< idx 1) (> idx (count opcoes)))
-                      (do
-                        (println "Opção inválida. Pulando alimento.")
-                        (recur (rest restantes) refeicoes-atualizadas))
-                      (let [selecionado (nth opcoes (dec idx))]
-                        (println (str "Digite a quantidade consumida em gramas de " (:descricao-pt selecionado) ":"))
-                        (let [qtd-str (read-line)]
-                          (if (alimento/double-str? qtd-str)
-                            (let [qtd (Double/parseDouble qtd-str)
-                                  nova-refeicao (alimento/montar-refeicao selecionado qtd)]
-                              (alimento/enviar-refeicao nova-refeicao)
-                              (println (str "Adicionado: " (:descricao-pt selecionado) " (" qtd "g)"))
-                              (recur (rest restantes) (conj refeicoes-atualizadas nova-refeicao)))
-                            (do
-                              (println "Quantidade inválida. Pulando alimento.")
-                              (recur (rest restantes) refeicoes-atualizadas)))))))))))]
-    (loop-nomes nomes refeicoes)))
+          (let [resultado (processar nomes refeicoes)]
+          (recur resultado)))))
 
-(defn executar [refeicoes]
-  (let [opcao (menu)]
-    (cond
-      (= opcao 1)
-      (do
-        (println "Digite os alimentos consumidos separados por vírgula (ex: arroz, feijao, ovo):")
-        (let [linha (read-line)
-              nomes (clojure.string/split linha #",\s*")
-              novas-refeicoes (adicionar-refeicoes nomes refeicoes)]
-          (recur novas-refeicoes)))
+          (= opcao 2)
+          (do
+          (let [{linhas :linhas total-cal :total-calorias} (alimento/imprimir-refeicoes refeicoes)]
+            (println "----------------------------------------------------------------------------------------------------------")
+            (letfn [(imprimir-linhas [lst]
+                      (if (empty? lst)
+                        nil
+                        (do
+                          (println (first lst))
+                          (recur (rest lst)))))]
+              (imprimir-linhas linhas))
+            (println "----------------------------------------------------------------------------------------------------------")
+            (println (format "Total de calorias consumidas no dia: %.2f kcal" total-cal))
+            (recur refeicoes)))
 
-      (= opcao 2)
-      (do
-        (imprimir-refeicoes refeicoes)
-        (recur refeicoes))
+          (= opcao 3)
+          (do
+          (println "Diga o nome do exercício: ")
+          (let [nome-exercicio (read-line)
+                peso-usuario (usuario/get-peso)
+                _ (println "Digite a duração do exercício em minutos: ")
+                duracao (read)
+                _ (println (format "Perda calórica baseada no seu peso atual %.2f Kg e tempo gasto %d min" peso-usuario duracao))
+                lista-exercicios (exercicio/listar-exercicios nome-exercicio peso-usuario duracao)
+                _ (println (exercicio/enumerar-exercicios lista-exercicios))
+                _ (println "Escolha o exercício realizado: ")
+                indice (read)
+                exercicio-selecionado (exercicio/selecionar-exercicio lista-exercicios indice)
+                _ (println "Exercício escolhido: " exercicio-selecionado)
+                _ (read-line)
+                _ (println "Informe a data em que o exercício foi realizado: (Ex: dia/mês/ano)")
+                data (read-line)
+                exercicio-com-data (exercicio/adicionar-data exercicio-selecionado data)
+                _ (exercicio/registrar-perda exercicio-com-data)
+                _ (println (format "Exercício (%s) adicionado com sucesso!" exercicio-com-data))]
 
-      (= opcao 3)
-      (do
-        (println "Diga o nome do exercício: ")
-        (let [nome-exercicio (read-line)
-              peso-usuario (usuario/get-peso)
-              _ (println "Digite a duração do exercício em minutos: ")
-              duracao (read)
-              _ (println (format "Perda calórica baseada no seu peso atual %.2f Kg e tempo gasto %d min" peso-usuario duracao))
-              lista-exercicios (exercicio/listar-exercicios nome-exercicio peso-usuario duracao)
-              _ (println (exercicio/enumerar-exercicios lista-exercicios))
-              _ (println "Escolha o exercício realizado: ")
-              indice (read)
-              exercicio-selecionado (exercicio/selecionar-exercicio lista-exercicios indice)
-              _ (println "Exercício escolhido: " exercicio-selecionado)
-              _ (read-line)
-              _ (println "Informe a data em que o exercício foi realizado: (Ex: dia/mês/ano)")
-              data (read-line)
-              exercicio-com-data (exercicio/adicionar-data exercicio-selecionado data)
-              _ (exercicio/registrar-perda exercicio-com-data)
-              _ (println (format "Exercício (%s) adicionado com sucesso!" exercicio-com-data))]
-          (recur refeicoes)))
+            (recur refeicoes)))
 
-      (= opcao 4)
-      (do
-        (println "Perdas calóricas registradas: ")
-        (let [lista-calorias-perdidas (exercicio/calorias-perdidas)
-              calorias-perdidas (exercicio/soma-calorias-perdidas)]
-          (println "" lista-calorias-perdidas)
-          (println "Total de calorias perdidas:" calorias-perdidas))
-        (recur refeicoes))
+          (= opcao 4)
+          (do
+          (println "Perdas calóricas registradas: ")
+          (let [lista-calorias-perdidas (exercicio/calorias-perdidas)
+                calorias-perdidas (exercicio/soma-calorias-perdidas)]
+            (println "" lista-calorias-perdidas)
+            (println "Total de calorias perdidas:" calorias-perdidas))
+          (recur refeicoes))
 
-      (= opcao 5)
-      (do
-        (let [calorias-ganhas (imprimir-refeicoes)
-              calorias-perdidas (exercicio/soma-calorias-perdidas)
-              saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
+          (= opcao 5)
+          (do
+          (let [calorias-ganhas (alimento/somar-calorias refeicoes)
+                calorias-perdidas (exercicio/soma-calorias-perdidas)
+                saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
+            (println "Total de calorias ganhas: " calorias-ganhas)
+            (println "Total de calorias perdidas: " calorias-perdidas)
+            (println saldo-calorico))
+          (recur refeicoes))
 
-          (println "Total de calorias ganhas: " calorias-ganhas)
-          (println "Total de calorias perdidas: " calorias-perdidas)
-          (println saldo-calorico)
-              )
-        (recur refeicoes))
+          (= opcao 6)
+          (println "Saindo...")
 
-      (= opcao 6)
-      (println "Saindo...")
-
-      :else
-      (do
-        (println "Opção inválida.")
-        (recur refeicoes)))))
+          :else
+          (do
+          (println "Opção inválida.")
+          (recur refeicoes)))))
 
 (defn -main []
   (menu-usuario)

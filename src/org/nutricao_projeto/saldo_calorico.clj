@@ -1,5 +1,4 @@
-(ns org.nutricao-projeto.saldo-calorico)
-
+(ns org.nutricao_projeto.saldo_calorico)
 
 (defn calcular-saldo-calorico[calorias-ganhas calorias-perdidas ]
   (let [saldo (- calorias-ganhas calorias-perdidas)]
