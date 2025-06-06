@@ -2,17 +2,13 @@
   (:require [cheshire.core :as json]
             [clj-http.client :as client]
             [clojure.string :as str]
+            [clojure.java.io :as io]
             [org.nutricao_projeto.traducao.traduzir_frase :as trad])
-  (:import (java.time LocalDateTime)
-           (java.time.format DateTimeFormatter)))
-
-(defn agora-formatado []
-  (let [agora (LocalDateTime/now)
-        formatador (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss")]
-    (.format agora formatador)))
+)
 
 (defn buscar-alimento [nome]
-  (let [url (str "http://localhost:3000/alimento/" nome)
+  (let [nome-enc (java.net.URLEncoder/encode nome "UTF-8")
+        url (str "http://localhost:3000/alimento/" nome-enc)
         response (client/get url {:headers {"Accept" "application/json"}
                                   :as :json})]
     (:body response)))
@@ -48,7 +44,7 @@
           (assoc a :descricao-pt desc-pt)))
       resultados)))
 
-(defn montar-refeicao [selecionado qtd]
+(defn montar-refeicao [selecionado qtd data]
   (let [descricao (:descricao-pt selecionado)
         nutrientes (:foodNutrients selecionado)
         cal-100g (obter-nutriente nutrientes "Energy")
@@ -62,21 +58,21 @@
      :proteina (* prot-100g fator)
      :gordura (* gord-100g fator)
      :carboidrato (* carb-100g fator)
-     :data-hora (agora-formatado)}))
+     :data data}))
 
 (defn imprimir-refeicoes [refeicoes]
   (letfn [(linha-cabecalho []
-            (format "%-25s %8s %10s %10s %10s %14s %20s"
-                    "Alimento" "Qtd(g)" "Calorias" "Proteína" "Gordura" "Carboidrato" "Data/Hora"))
+            (format "%-25s %8s %10s %10s %10s %14s %12s"
+                    "Alimento" "Qtd(g)" "Calorias" "Proteína" "Gordura" "Carboidrato" "Data"))
           (formatar-refeicao [r]
-            (format "%-25s %8.1f %10.2f %10.2f %10.2f %14.2f %20s"
+            (format "%-25s %8.1f %10.2f %10.2f %10.2f %14.2f %12s"
                     (:alimento r)
                     (:quantidade r)
                     (:calorias r)
                     (:proteina r)
                     (:gordura r)
                     (:carboidrato r)
-                    (:data-hora r)))
+                    (:data r)))
           (acumular-calorias [lst acc]
             (if (empty? lst)
               acc
@@ -87,3 +83,12 @@
 (defn somar-calorias [refeicoes]
   (reduce + 0 (map :calorias refeicoes)))
 
+(def caminho-refeicoes "refeicoes.json")
+
+(defn salvar-refeicoes [refeicoes]
+  (spit caminho-refeicoes (json/generate-string refeicoes)))
+
+(defn carregar-refeicoes []
+  (if (.exists (io/file caminho-refeicoes))
+    (json/parse-string (slurp caminho-refeicoes) true)
+    []))
