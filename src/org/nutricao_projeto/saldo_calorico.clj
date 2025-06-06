@@ -1,14 +1,10 @@
 (ns org.nutricao_projeto.saldo_calorico)
 
-(defn calcular-saldo-calorico[calorias-ganhas calorias-perdidas ]
+(defn calcular-saldo-calorico [calorias-ganhas calorias-perdidas]
   (let [saldo (- calorias-ganhas calorias-perdidas)]
     (if (neg? saldo)
-      (format "Você Perdeu %d calorias!" (Math/abs saldo))
-      (format "Você Ganhou %d calorias!" saldo)
-      )
-    )
-  )
+      (format "Você Perdeu %.2f calorias!" (Math/abs saldo))
+      (format "Você Ganhou %.2f calorias!" saldo))))
 
-(defn -main[]
-  (println (calcular-saldo-calorico 200 300))
-  )
+(defn -main []
+  (println (calcular-saldo-calorico 200 300)))

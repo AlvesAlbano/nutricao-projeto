@@ -107,34 +107,35 @@
                           (println (first lst))
                           (recur (rest lst)))))]
               (imprimir-linhas linhas))
-            (println "----------------------------------------------------------------------------------------------------------")
-            (println (format "Total de calorias consumidas no dia: %.2f kcal" total-cal))
-            (recur refeicoes)))
+              (println "----------------------------------------------------------------------------------------------------------")
+              (println (format "Total de calorias consumidas no dia: %.2f kcal" total-cal))
+              (recur refeicoes)))
 
-          (= opcao 3)
-          (do
-          (println "Diga o nome do exercício: ")
-          (let [nome-exercicio (read-line)
-                peso-usuario (usuario/get-peso)
-                _ (println "Digite a duração do exercício em minutos: ")
-                duracao (read)
-                _ (println (format "Perda calórica baseada no seu peso atual %.2f Kg e tempo gasto %d min" peso-usuario duracao))
-                lista-exercicios (exercicio/listar-exercicios nome-exercicio peso-usuario duracao)
-                _ (println (exercicio/enumerar-exercicios lista-exercicios))
-                _ (println "Escolha o exercício realizado: ")
-                indice (read)
-                exercicio-selecionado (exercicio/selecionar-exercicio lista-exercicios indice)
-                _ (println "Exercício escolhido: " exercicio-selecionado)
-                _ (read-line)
-                _ (println "Informe a data em que o exercício foi realizado: (Ex: dia/mês/ano)")
-                data (read-line)
-                exercicio-com-data (exercicio/adicionar-data exercicio-selecionado data)
-                _ (exercicio/registrar-perda exercicio-com-data)
-                _ (println (format "Exercício (%s) adicionado com sucesso!" exercicio-com-data))]
+              (= opcao 3)
+                (do
+                (println "Diga o nome do exercício: ")
+                (let [nome-exercicio (read-line)
+                    peso-usuario (usuario/get-peso)
+                    _ (println "Digite a duração do exercício em minutos: ")
+                    duracao (read)
+                    _ (println (format "Perda calórica baseada no seu peso atual %.2f Kg e tempo gasto %d min"
+                                       (double peso-usuario) duracao))
+                    lista-exercicios (exercicio/listar-exercicios nome-exercicio peso-usuario duracao)
+                    _ (println (exercicio/enumerar-exercicios lista-exercicios))
+                    _ (println "Escolha o exercício realizado: ")
+                    indice (read)
+                    exercicio-selecionado (exercicio/selecionar-exercicio lista-exercicios indice)
+                    _ (println "Informe a data em que o exercício foi realizado: (Ex: dia/mês/ano)")
+                    data (read-line)
+                    exercicio-com-data (exercicio/adicionar-data exercicio-selecionado data)
+                    _ (exercicio/registrar-perda exercicio-com-data)]
+                  (println (str "Exercício adicionado com sucesso: "
+                              (:nome exercicio-com-data)
+                              ", Data: " (:data exercicio-com-data)
+                              ", Calorias: " (:total-calorias exercicio-com-data) " kcal"))
+                  (recur refeicoes)))
 
-            (recur refeicoes)))
-
-          (= opcao 4)
+      (= opcao 4)
           (do
           (println "Perdas calóricas registradas: ")
           (let [lista-calorias-perdidas (exercicio/calorias-perdidas)
