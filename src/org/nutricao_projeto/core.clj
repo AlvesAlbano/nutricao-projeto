@@ -10,9 +10,9 @@
   (if (empty? (usuario/get-usuario))
     (do
       (println "Insira seus dados")
-      (println "Digite sua altura: ")
+      (println "Digite sua altura: (em cm)")
       (let [altura (read)]
-        (println "Digite seu peso: (Em Kg)")
+        (println "Digite seu peso: (Em kg)")
         (let [peso (read)]
           (println "Digite sua idade: ")
           (let [idade (read)]
@@ -139,15 +139,15 @@
           (do
           (println "Perdas calóricas registradas: ")
           (let [lista-calorias-perdidas (exercicio/calorias-perdidas)
-                calorias-perdidas (exercicio/soma-calorias-perdidas)]
-            (println "" lista-calorias-perdidas)
+                calorias-perdidas (exercicio/total-calorias-perdidas)]
+            (println lista-calorias-perdidas)
             (println "Total de calorias perdidas:" calorias-perdidas))
           (recur refeicoes))
 
           (= opcao 5)
           (do
           (let [calorias-ganhas (alimento/somar-calorias refeicoes)
-                calorias-perdidas (exercicio/soma-calorias-perdidas)
+                calorias-perdidas (exercicio/total-calorias-perdidas)
                 saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
             (println "Total de calorias ganhas: " calorias-ganhas)
             (println "Total de calorias perdidas: " calorias-perdidas)
@@ -164,4 +164,5 @@
 
 (defn -main []
   (menu-usuario)
-  (executar []))
+  (executar [])
+  )

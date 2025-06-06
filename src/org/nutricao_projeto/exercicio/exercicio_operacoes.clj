@@ -19,7 +19,7 @@
   (assoc exercicio :data data)
   )
 
-(defn soma-calorias-perdidas []
+(defn total-calorias-perdidas []
   (let [resposta (http/get (str URL "calorias-perdidas") {
                                                           :headers {"Accept" "application/json"}
                                                           :as :json})

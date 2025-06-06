@@ -1,7 +1,6 @@
 (ns org.nutricao_projeto.usuario.usuario_operacoes
   (:require [cheshire.core :as json]
-            [clj-http.client :as http]
-            [org.nutricao_projeto.data :as data]))
+            [clj-http.client :as http]))
 
 (defn cadastrar-usuario [usuario]
   (http/post "http://localhost:3000/cadastrar-usuario"
@@ -12,7 +11,7 @@
   )
 
 (defn get-usuario []
-  (let [resposta (http/get (str data/URL "/usuario")
+  (let [resposta (http/get (str "http://localhost:3000" "/usuario")
                            {:headers {"Accept" "application/json"}
                             :as :json})
         corpo (:body resposta)]
