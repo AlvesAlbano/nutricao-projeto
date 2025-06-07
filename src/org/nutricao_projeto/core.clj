@@ -9,7 +9,7 @@
   (if (empty? (usuario/get-usuario))
     (do
       (println "Insira seus dados")
-      (println "Digite sua altura: (em cm)")
+      (println "Digite sua altura: (em m)")
       (let [altura (read)]
         (println "Digite seu peso: (Em kg)")
         (let [peso (read)]

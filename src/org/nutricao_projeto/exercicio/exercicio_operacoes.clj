@@ -24,7 +24,7 @@
                                                           :headers {"Accept" "application/json"}
                                                           :as :json})
         corpo (:body resposta)]
-    (reduce + (map :total-calorias corpo))
+    (reduce + 0 (map :total-calorias corpo))
     )
   )
 

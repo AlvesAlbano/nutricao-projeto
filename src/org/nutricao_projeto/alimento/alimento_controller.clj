@@ -83,12 +83,19 @@
 (defn somar-calorias [refeicoes]
   (reduce + 0 (map :calorias refeicoes)))
 
-(def caminho-refeicoes "refeicoes.json")
-
 (defn salvar-refeicoes [refeicoes]
-  (spit caminho-refeicoes (json/generate-string refeicoes)))
+  (client/post "http://localhost:3000/registrar-refeicao"
+             {:headers {"Content-Type" "application/json"
+                        "Accept" "application/json"}
+              :body (json/generate-string refeicoes)
+              :as      :json})
+  )
 
 (defn carregar-refeicoes []
-  (if (.exists (io/file caminho-refeicoes))
-    (json/parse-string (slurp caminho-refeicoes) true)
-    []))
+  (let [resposta (client/get "http://localhost:3000/calorias-perdidas" {:headers {"Accept" "application/json"}
+                                                                      :as :json})
+        corpo (:body resposta)]
+
+    (mapv imprimir-refeicoes corpo)
+    )
+  )
