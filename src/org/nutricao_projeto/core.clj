@@ -117,11 +117,11 @@
       (let [nome-exercicio (do (println "Diga o nome do exercício: ") (read-line))
             peso-usuario (usuario/get-peso)
             duracao (do (println "Digite a duração do exercício em minutos: ") (read))
-            _ (println (format "Perda calórica baseada no seu peso atual %.2f Kg e tempo gasto %d min"
-                               (double peso-usuario) duracao))
+            _ (println (format "Perda calórica baseada no seu peso atual %.2f Kg e tempo gasto %d min" peso-usuario duracao))
             lista-exercicios (exercicio/listar-exercicios nome-exercicio peso-usuario duracao)
             _ (println (exercicio/enumerar-exercicios lista-exercicios))
             indice (do (println "Escolha o exercício realizado: ") (read))
+            _ (read-line)
             exercicio-selecionado (exercicio/selecionar-exercicio lista-exercicios indice)
             data (do (println "Informe a data em que o exercício foi realizado: (Ex: dia/mês/ano)") (read-line))
             exercicio-com-data (exercicio/adicionar-data exercicio-selecionado data)]

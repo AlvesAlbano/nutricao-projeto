@@ -20,5 +20,5 @@
   )
 
 (defn get-peso[]
-  (:peso (get-usuario))
+  (double (:peso (get-usuario)))
   )
