@@ -1,6 +1,6 @@
 (ns org.nutricao_projeto.core
   (:require [org.nutricao_projeto.alimento.alimento_controller :as alimento]
-            [org.nutricao_projeto.data]
+            [org.nutricao_projeto.data :as data]
             [org.nutricao_projeto.exercicio.exercicio_operacoes :as exercicio]
             [org.nutricao_projeto.saldo_calorico :as saldo]
             [org.nutricao_projeto.usuario.usuario_operacoes :as usuario]))
@@ -28,8 +28,10 @@
   (println "2. Mostrar refeições do dia")
   (println "3. Adicionar exercício")
   (println "4. Mostrar exercicios realizados")
-  (println "5. Calcular saldo calorico")
-  (println "6. Sair")
+  (println "5. Mostrar exercicios realizados período")
+  (println "6. Calcular saldo calorico")
+  (println "7. Calcular saldo calorico por período")
+  (println "8. Sair")
   (println "Escolha uma opção:"))
 
 (defn menu []
@@ -92,12 +94,9 @@
             (executar resultado))))
 
       (= opcao 2)
-      (let [data-inicio-str (do (println "Digite a data inicial (dd/MM/yyyy): ") (read-line))
-            data-fim-str (do (println "Digite a data final (dd/MM/yyyy): ") (read-line))
-            formatter (java.time.format.DateTimeFormatter/ofPattern "dd/MM/yyyy")
-            data-inicio (java.time.LocalDate/parse data-inicio-str formatter)
-            data-fim (java.time.LocalDate/parse data-fim-str formatter)
-            refeicoes-filtradas (org.nutricao_projeto.data/entre-datas refeicoes data-inicio data-fim)
+      (let [data-inicio (do (println "Digite a data inicial: (Ex: dia/mês/ano)") (read-line))
+            data-fim (do (println "Digite a data final: (Ex: dia/mês/ano)") (read-line))
+            refeicoes-filtradas (data/entre-datas refeicoes data-inicio data-fim)
             {linhas :linhas total-cal :total-calorias} (alimento/imprimir-refeicoes refeicoes-filtradas)]
         (println "----------------------------------------------------------------------------------------------------------")
         (if (empty? linhas)
@@ -133,14 +132,26 @@
         (executar refeicoes))
 
       (= opcao 4)
-      (let [lista-calorias-perdidas (exercicio/calorias-perdidas)
-            calorias-perdidas (exercicio/total-calorias-perdidas)]
-        (println "Perdas calóricas registradas: ")
-        (println lista-calorias-perdidas)
+      (let [calorias-perdidas (exercicio/total-calorias-perdidas)]
+        (println "Perdas calóricas registradas: \n")
+        (exercicio/imprimir-calorias-perdidas)
         (println "Total de calorias perdidas:" calorias-perdidas)
         (executar refeicoes))
 
       (= opcao 5)
+      (let [lista-calorias-perdidas (exercicio/lista-calorias-perdidas)
+            data-inicial (do (println "Digite a data inicial: (Ex: dia/mês/ano)") (read-line))
+            data-final (do (println "Digite a data final: (Ex: dia/mês/ano)") (read-line))
+            exercicios-filtrados (data/entre-datas lista-calorias-perdidas data-inicial data-final)
+            calorias-perdidas (exercicio/total-calorias-perdidas exercicios-filtrados)]
+
+        (println (format "Perdas calóricas registradas: (Entre %s - %s)\n" data-inicial data-final))
+        (exercicio/imprimir-calorias-perdidas lista-calorias-perdidas)
+        (mapv exercicio/formatar-perda-lista exercicios-filtrados)
+        (println "Total de calorias perdidas:" calorias-perdidas)
+        (executar refeicoes))
+
+      (= opcao 6)
       (let [calorias-ganhas (alimento/somar-calorias refeicoes)
             calorias-perdidas (exercicio/total-calorias-perdidas)
             saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
@@ -149,7 +160,26 @@
         (println saldo-calorico)
         (executar refeicoes))
 
-      (= opcao 6)
+      (= opcao 7)
+      (let [data-inicial (do (println "Digite a data inicial: (Ex: dia/mês/ano)") (read-line))
+            data-final (do (println "Digite a data final: (Ex: dia/mês/ano)") (read-line))
+            lista-calorias-perdidas (exercicio/lista-calorias-perdidas)
+
+            exercicios-filtrados (data/entre-datas lista-calorias-perdidas data-inicial data-final)
+            refeicoes-filtradas (data/entre-datas refeicoes data-inicial data-final)
+            calorias-ganhas (alimento/somar-calorias refeicoes-filtradas)
+            calorias-perdidas (exercicio/total-calorias-perdidas exercicios-filtrados)
+
+            saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
+        ;(println (type calorias-perdidas))
+        ;(println (type calorias-ganhas))
+        (println (format "Total de calorias ganhas: %.2f (Entre %s - %s)" calorias-ganhas data-inicial data-final))
+        (println (format "Total de calorias perdidas: %d (Entre %s - %s)" calorias-perdidas data-inicial data-final))
+        (println saldo-calorico)
+        (executar refeicoes))
+
+
+      (= opcao 8)
       (println "Saindo...")
 
       :else
@@ -159,5 +189,6 @@
 
 (defn -main []
   (menu-usuario)
+  ;(executar[]))
   (let [refeicoes-salvas (alimento/carregar-refeicoes)]
     (executar refeicoes-salvas)))

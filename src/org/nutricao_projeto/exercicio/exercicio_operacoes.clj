@@ -15,17 +15,31 @@
     )
   )
 
+(defn lista-calorias-perdidas[]
+  (let [resposta (http/get "http://localhost:3000/calorias-perdidas" {:headers {"Accept" "application/json"}
+                                                                      :as :json})
+        corpo (:body resposta)]
+    corpo
+    )
+  )
+
 (defn adicionar-data [exercicio data]
   (assoc exercicio :data data)
   )
 
-(defn total-calorias-perdidas []
+(defn total-calorias-perdidas
+  ([]
   (let [resposta (http/get (str URL "calorias-perdidas") {
                                                           :headers {"Accept" "application/json"}
                                                           :as :json})
         corpo (:body resposta)]
     (reduce + 0 (map :total-calorias corpo))
     )
+   )
+
+  ([lista-filtrada]
+   (reduce + 0 (map :total-calorias lista-filtrada))
+   )
   )
 
 (defn listar-exercicios[nome-exercicio peso duracao]
@@ -64,11 +78,10 @@
               :as      :json})
   )
 
-(defn calorias-perdidas []
-  (let [resposta (http/get "http://localhost:3000/calorias-perdidas" {:headers {"Accept" "application/json"}
-                                                  :as :json})
-    corpo (:body resposta)]
+(defn imprimir-calorias-perdidas
+  ([]
+  (mapv #(print (formatar-perda-lista %)) (lista-calorias-perdidas)))
 
-    (map formatar-perda-lista corpo)
-    )
+  ([lista]
+   (mapv #(print (formatar-perda-lista %)) lista))
   )
