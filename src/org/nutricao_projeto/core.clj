@@ -109,7 +109,7 @@
                         (printar (rest lst)))))]
             (printar linhas)))
         (println "----------------------------------------------------------------------------------------------------------")
-        (println (format "Total de calorias consumidas no período: %.2f kcal" total-cal))
+        (format "Total de calorias consumidas no período: %.2f kcal" (double total-cal))
         (executar refeicoes))
 
       (= opcao 3)
@@ -155,8 +155,8 @@
       (let [calorias-ganhas (alimento/somar-calorias refeicoes)
             calorias-perdidas (exercicio/total-calorias-perdidas)
             saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
-        (println "Total de calorias ganhas: " calorias-ganhas)
-        (println "Total de calorias perdidas: " calorias-perdidas)
+        (println "Total de calorias ganhas: %.2f" calorias-ganhas)
+        (println "Total de calorias perdidas: %.2f " calorias-perdidas)
         (println saldo-calorico)
         (executar refeicoes))
 
@@ -171,13 +171,10 @@
             calorias-perdidas (exercicio/total-calorias-perdidas exercicios-filtrados)
 
             saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
-        ;(println (type calorias-perdidas))
-        ;(println (type calorias-ganhas))
         (println (format "Total de calorias ganhas: %.2f (Entre %s - %s)" calorias-ganhas data-inicial data-final))
-        (println (format "Total de calorias perdidas: %d (Entre %s - %s)" calorias-perdidas data-inicial data-final))
+        (println (format "Total de calorias perdidas: %.2f (Entre %s - %s)" calorias-perdidas data-inicial data-final))
         (println saldo-calorico)
         (executar refeicoes))
-
 
       (= opcao 8)
       (println "Saindo...")
