@@ -1,8 +1,7 @@
 (ns org.nutricao_projeto.exercicio.exercicio_operacoes
   (:require [cheshire.core :as json]
-            [clj-http.client :as http]))
-
-(def URL "http://localhost:3000/")
+            [clj-http.client :as http]
+            [public.URL :as resource]))
 
 (defn formatar-perda-lista [lista-perda]
   (let [nome (:nome lista-perda)
@@ -16,7 +15,7 @@
   )
 
 (defn lista-calorias-perdidas[]
-  (let [resposta (http/get "http://localhost:3000/calorias-perdidas" {:headers {"Accept" "application/json"}
+  (let [resposta (http/get (str resource/URL "calorias-perdidas") {:headers {"Accept" "application/json"}
                                                                       :as :json})
         corpo (:body resposta)]
     corpo
@@ -29,11 +28,8 @@
 
 (defn total-calorias-perdidas
   ([]
-  (let [resposta (http/get (str URL "calorias-perdidas") {
-                                                          :headers {"Accept" "application/json"}
-                                                          :as :json})
-        corpo (:body resposta)]
-    (reduce + 0 (map :total-calorias corpo))
+  (let [lista-calorias-perdidas (lista-calorias-perdidas)]
+    (reduce + 0 (map :total-calorias lista-calorias-perdidas))
     )
    )
 
@@ -43,7 +39,7 @@
   )
 
 (defn listar-exercicios[nome-exercicio peso duracao]
-  (let [resposta (http/get (str URL "exercicio") {
+  (let [resposta (http/get (str resource/URL "exercicio") {
                                 :headers {"Accept" "application/json"}
                                           :query-params {:activity nome-exercicio
                                                          :weight peso
@@ -71,7 +67,7 @@
   )
 
 (defn registrar-perda [exercicio]
-  (http/post "http://localhost:3000/registrar-perda"
+  (http/post (str resource/URL "registrar-perda")
              {:headers {"Content-Type" "application/json"
                         "Accept" "application/json"}
               :body (json/generate-string exercicio)

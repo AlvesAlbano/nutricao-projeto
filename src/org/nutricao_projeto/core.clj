@@ -155,8 +155,8 @@
       (let [calorias-ganhas (alimento/somar-calorias refeicoes)
             calorias-perdidas (exercicio/total-calorias-perdidas)
             saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
-        (println "Total de calorias ganhas: %.2f" calorias-ganhas)
-        (println "Total de calorias perdidas: %.2f " calorias-perdidas)
+        (println "Total de calorias ganhas: " calorias-ganhas)
+        (println "Total de calorias perdidas: " calorias-perdidas)
         (println saldo-calorico)
         (executar refeicoes))
 
@@ -172,7 +172,7 @@
 
             saldo-calorico (saldo/calcular-saldo-calorico calorias-ganhas calorias-perdidas)]
         (println (format "Total de calorias ganhas: %.2f (Entre %s - %s)" calorias-ganhas data-inicial data-final))
-        (println (format "Total de calorias perdidas: %.2f (Entre %s - %s)" calorias-perdidas data-inicial data-final))
+        (println (format "Total de calorias perdidas: %d (Entre %s - %s)" calorias-perdidas data-inicial data-final))
         (println saldo-calorico)
         (executar refeicoes))
 

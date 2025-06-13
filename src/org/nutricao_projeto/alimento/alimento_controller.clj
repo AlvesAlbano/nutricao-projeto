@@ -3,12 +3,14 @@
             [clj-http.client :as client]
             [clojure.string :as str]
             [clojure.java.io :as io]
+            [public.URL :as resource]
             [org.nutricao_projeto.traducao.traduzir_frase :as trad])
 )
 
 (defn buscar-alimento [nome]
   (let [nome-enc (java.net.URLEncoder/encode nome "UTF-8")
-        url (str "http://localhost:3000/alimento/" nome-enc)
+        ;url (str "http://localhost:3000/alimento/" nome-enc)
+        url (str resource/URL "/alimento/" nome-enc)
         response (client/get url {:headers {"Accept" "application/json"}
                                   :as :json})]
     (:body response)))
@@ -84,7 +86,7 @@
   (reduce + 0 (map :calorias refeicoes)))
 
 (defn salvar-refeicoes [refeicoes]
-  (client/post "http://localhost:3000/registrar-refeicao"
+  (client/post (str resource/URL "registrar-refeicao")
              {:headers {"Content-Type" "application/json"
                         "Accept" "application/json"}
               :body (json/generate-string refeicoes)
@@ -92,10 +94,11 @@
   )
 
 (defn carregar-refeicoes []
-  (let [resposta (client/get "http://localhost:3000/calorias-perdidas" {:headers {"Accept" "application/json"}
+  (let [resposta (client/get (str resource/URL "refeicoes") {:headers {"Accept" "application/json"}
                                                                       :as :json})
         corpo (:body resposta)]
 
-    (mapv imprimir-refeicoes corpo)
+    ;(mapv imprimir-refeicoes corpo)
+    (apply concat corpo)
     )
   )
